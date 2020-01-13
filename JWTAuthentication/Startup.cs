@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using System;
 using System.Text;
 
 namespace JWTAuthentication
@@ -37,6 +38,7 @@ namespace JWTAuthentication
             {
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
+                    ClockSkew = TimeSpan.FromMinutes(5),
                     ValidateIssuer = true,
                     ValidateAudience = true,
                     ValidateLifetime = true,
