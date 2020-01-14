@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Primitives;
 using Microsoft.IdentityModel.Tokens;
 using System;
 using System.IdentityModel.Tokens.Jwt;
@@ -21,15 +22,25 @@ namespace JWTAuthentication.Controllers
         }
         [AllowAnonymous]
         [HttpPost]
-        public IActionResult Login([FromBody]UserModel login)
+        public IActionResult Login([FromHeader]string authorization, [FromBody]UserModel login)
         {
-            IActionResult response = Unauthorized();
-            var user = AuthenticateUser(login);
+            string encodedUsernamePassword = authorization.Substring("Basic ".Length).Trim();
+            Encoding encoding = Encoding.GetEncoding("iso-8859-1");
+            string cient_id_secret = encoding.GetString(Convert.FromBase64String(encodedUsernamePassword));
+            int seperatorIndex = cient_id_secret.IndexOf(':');
+            var client_id = cient_id_secret.Substring(0, seperatorIndex);
+            var client_secret = cient_id_secret.Substring(seperatorIndex + 1);
 
-            if (user != null)
+            IActionResult response = Unauthorized();
+            if (client_id == _config["Jwt:client_id"] && client_secret == _config["Jwt:client_secret"])
             {
-                var tokenString = GenerateJSONWebToken(user);
-                response = Ok(new { token = tokenString });
+                var user = AuthenticateUser(login);
+
+                if (user != null)
+                {
+                    var tokenString = GenerateJSONWebToken(user);
+                    response = Ok(new { token = tokenString });
+                }
             }
 
             return response;
